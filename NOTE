@@ -1,0 +1,29 @@
+// import { useEffect, useState } from "react";
+
+// function App() {
+//   const [data, setData] = useState(null);
+
+//   useEffect(() => {
+//     async function loadData() {
+//       try {
+//         const res = await fetch("YOUR_PUBLIC_API_URL_HERE");
+//         const json = await res.json();
+//         console.log("API response in React:", json);
+//         setData(json);
+//       } catch (err) {
+//         console.error("Error calling API from React:", err);
+//       }
+//     }
+
+//     loadData();
+//   }, []);
+
+//   return (
+//     <div>
+//       <h1>Public API test</h1>
+//       <pre>{JSON.stringify(data, null, 2)}</pre>
+//     </div>
+//   );
+// }
+
+// export default App;
