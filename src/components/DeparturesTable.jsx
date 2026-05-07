@@ -1,10 +1,10 @@
-// src/components/ArrivalsTable.jsx
-import ArrivalRow from "./ArrivalRow";
+// src/components/DeparturesTable.jsx
+import DepartureRow from "./DepartureRow";
 
-const ArrivalsTable = ({ arrivals, searchTerm }) => {
+const DeparturesTable = ({ departures, searchTerm }) => {
   const query = searchTerm.toLowerCase();
 
-  const filteredArrivals = arrivals.filter((flight) => {
+  const filteredDepartures = departures.filter((flight) => {
     const airlineName = flight.airline?.name || "";
     const flightNumber =
       flight.flight?.iataNumber || flight.flight?.number || "";
@@ -36,15 +36,15 @@ const ArrivalsTable = ({ arrivals, searchTerm }) => {
           </tr>
         </thead>
         <tbody>
-          {filteredArrivals.length === 0 ? (
+          {filteredDepartures.length === 0 ? (
             <tr>
               <td colSpan={/* number of columns */ 6}>
-                No arrivals found for “{searchTerm}”.
+                No departures found for “{searchTerm}”.
               </td>
             </tr>
           ) : (
-            filteredArrivals.map((flight, index) => (
-              <ArrivalRow key={index} flight={flight} />
+            filteredDepartures.map((flight, index) => (
+              <DepartureRow key={index} flight={flight} />
             ))
           )}
         </tbody>
@@ -53,4 +53,4 @@ const ArrivalsTable = ({ arrivals, searchTerm }) => {
   );
 };
 
-export default ArrivalsTable;
+export default DeparturesTable;

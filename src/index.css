@@ -20,3 +20,21 @@ body {
   justify-content: center;
   align-items: center;
 }
+
+.tables-container {
+  display: flex;
+  gap: 2rem; /* space between arrivals and departures */
+  align-items: flex-start;
+}
+
+/* Optional: let each table take half the width */
+.table-wrapper {
+  flex: 1;
+  min-width: 0; /* helps prevent overflow */
+}
+
+/* Optional: make tables shrink to fit nicely */
+.table-wrapper table {
+  width: 100%;
+  border-collapse: collapse;
+}

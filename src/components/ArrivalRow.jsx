@@ -1,4 +1,4 @@
-// src/components/ArrivalRow.jsx
+import { formatTime } from "../utils/time";
 
 const getArrivalDisplayTime = (arrival) => {
   if (!arrival) return null;
@@ -8,14 +8,8 @@ const getArrivalDisplayTime = (arrival) => {
 const ArrivalRow = ({ flight }) => {
   const { arrival, flight: flightInfo, codeshared, status } = flight;
 
-  const rawTime = getArrivalDisplayTime(arrival);
-
-  const displayTime = rawTime
-    ? new Date(rawTime).toLocaleTimeString("en-SG", {
-        hour: "2-digit",
-        minute: "2-digit",
-      })
-    : "N/A";
+  const time =
+    arrival?.scheduledTime || arrival?.estimatedTime || arrival?.actualTime;
 
   const primaryCode = flightInfo?.iataNumber || flightInfo?.number || "N/A";
   const codeshareCode = codeshared?.flight?.iataNumber;
@@ -25,7 +19,7 @@ const ArrivalRow = ({ flight }) => {
 
   return (
     <tr>
-      <td>{displayTime}</td>
+      <td>{formatTime(time)}</td>
       <td>
         {primaryCode}
         {codeshareCode && (

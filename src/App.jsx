@@ -1,60 +1,23 @@
-import { useEffect, useState } from "react";
-import ArrivalsTable from "./components/ArrivalsTable";
-import DeparturesTable from "./components/DeparturesTable";
+import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+import Navbar from "./components/Navbar";
+import LiveFlightsPage from "./components/LiveFlightsPage";
+import FlightSearchPage from "./components/FlightSearchPage";
+import FlightResultsPage from "./components/FlightResultsPage";
+
+// temporary placeholder for SearchPage and MyFlightsPage
+const SearchPage = () => <div>Search page (coming soon)</div>;
+const MyFlightsPage = () => <div>My flights (coming soon)</div>;
 
 const App = () => {
-  const [arrivals, setArrivals] = useState([]);
-  const [departures, setDepartures] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        setLoading(true);
-        setError(null);
-
-        const apiKey = import.meta.env.VITE_AVIATION_EDGE_KEY;
-        const arrivalsUrl = `https://aviation-edge.com/v2/public/timetable?key=00e29f-40d247&iataCode=SIN&type=arrival`;
-        const departuresUrl = `https://aviation-edge.com/v2/public/timetable?key=00e29f-40d247&iataCode=SIN&type=departure`;
-
-        const [arrivalsRes, departuresRes] = await Promise.all([
-          fetch(arrivalsUrl),
-          fetch(departuresUrl),
-        ]);
-
-        if (!arrivalsRes.ok || !departuresRes.ok) {
-          throw new Error(
-            `HTTP error! arrivals: ${arrivalsRes.status}, departures: ${departuresRes.status}`,
-          );
-        }
-
-        const [arrivalsData, departuresData] = await Promise.all([
-          arrivalsRes.json(),
-          departuresRes.json(),
-        ]);
-
-        setArrivals(arrivalsData);
-        setDepartures(departuresData);
-      } catch (err) {
-        console.error("Error fetching data:", err);
-        setError(err.message);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchData();
-  }, []);
-
-  if (loading) return <div>Loading flights…</div>;
-  if (error) return <div>Error loading flights: {error}</div>;
-
   return (
     <div>
-      <h1>Changi Airport Flights (Live)</h1>
-      <ArrivalsTable arrivals={arrivals} />
-      <DeparturesTable departures={departures} />
+      <Navbar />
+      <Routes>
+        <Route path="/" element={<FlightSearchPage />} />
+        <Route path="/search/results" element={<FlightResultsPage />} />
+        <Route path="/live" element={<LiveFlightsPage />} />
+        <Route path="/my-flights" element={<MyFlightsPage />} />
+      </Routes>
     </div>
   );
 };
