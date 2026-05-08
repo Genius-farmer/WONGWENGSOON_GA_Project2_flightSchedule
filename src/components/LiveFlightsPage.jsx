@@ -65,18 +65,25 @@ const LiveFlightsPage = () => {
   }, []);
 
   return (
-    <div>
-      <h1>Changi Airport Flights (Live)</h1>
+    <div className="page-shell">
+      <div className="page-title-block">
+        <h1>Changi Airport Flights</h1>
+        <p className="page-title-block__subtitle">
+          Live arrivals and departures in real time.
+        </p>
+      </div>
+
+      {error && <p className="error-message">{error}</p>}
 
       {loading ? (
-        <p>Loading live flights…</p>
+        <p className="info-text">Loading live flights...</p>
       ) : (
         <div className="tables-container">
           <div className="table-wrapper">
             <h2>Changi Airport Arrivals</h2>
             <input
               type="text"
-              placeholder="Search by flight number, airline or airport"
+              placeholder="Search by flight number"
               value={arrivalSearch}
               onChange={(e) => setArrivalSearch(e.target.value)}
             />
@@ -87,7 +94,7 @@ const LiveFlightsPage = () => {
             <h2>Changi Airport Departures</h2>
             <input
               type="text"
-              placeholder="Search by flight number, airline or airport"
+              placeholder="Search by flight number"
               value={departureSearch}
               onChange={(e) => setDepartureSearch(e.target.value)}
             />

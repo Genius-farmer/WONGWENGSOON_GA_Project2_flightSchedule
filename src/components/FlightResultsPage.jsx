@@ -1,10 +1,35 @@
+// FlightResultsPage-5.jsx
+
 import { useEffect, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { formatTime } from "../utils/time";
 import {
   fetchFlightByNumberAndDate,
   fetchFlightsByRouteAndDate,
+  saveFlightToAirtable,
 } from "../api/airtable";
+
+const getStatusClassName = (status) => {
+  const value = (status || "").toLowerCase();
+  if (
+    value.includes("on time") ||
+    value.includes("active") ||
+    value.includes("landed") ||
+    value.includes("arrived") ||
+    value.includes("scheduled")
+  ) {
+    return "status-pill status-pill--positive";
+  }
+  return "status-pill";
+};
+
+const formatStatusLabel = (status) => {
+  if (!status) return "Unknown";
+  return status
+    .toString()
+    .toLowerCase()
+    .replace(/\b\w/g, (char) => char.toUpperCase());
+};
 
 const FlightResultsPage = () => {
   const navigate = useNavigate();
@@ -37,7 +62,9 @@ const FlightResultsPage = () => {
   const [byRouteLoading, setByRouteLoading] = useState(false);
   const [byRouteError, setByRouteError] = useState("");
 
-  let results = [];
+  const [saving, setSaving] = useState(false);
+  const [saveError, setSaveError] = useState("");
+  const [saveSuccess, setSaveSuccess] = useState("");
 
   useEffect(() => {
     if (mode !== "byFlight") return;
@@ -85,23 +112,35 @@ const FlightResultsPage = () => {
   let arrivalTime = "";
   let departureTerminal = "";
   let arrivalTerminal = "";
+  let departureGate = "";
+  let arrivalGate = "";
+  let airlineText = "";
+  let flightStatus = "";
   let durationText = "";
   let aircraftText = "";
 
   if (mainRecord && mode === "byFlight") {
-    const fields = mainRecord.fields || {};
+    const dep = mainRecord.departure || {};
+    const arr = mainRecord.arrival || {};
+    const aircraft = mainRecord.aircraft || {};
 
-    departureAirportName = fields.From || "N/A";
-    arrivalAirportName = fields.To || "N/A";
+    departureAirportName = dep.iataCode || dep.icaoCode || "N/A";
+    arrivalAirportName = arr.iataCode || arr.icaoCode || "N/A";
 
-    const depTime = fields["Departure Time"] || "";
-    const arrTime = fields["Arrival Time"] || "";
+    const depTime =
+      dep.actualTime || dep.estimatedTime || dep.scheduledTime || "";
+    const arrTime =
+      arr.actualTime || arr.estimatedTime || arr.scheduledTime || "";
 
     departureTime = depTime || "";
     arrivalTime = arrTime || "";
 
-    departureTerminal = fields["Departure Terminal"] || "N/A";
-    arrivalTerminal = fields["Arrival Terminal"] || "N/A";
+    departureTerminal = dep.terminal || "N/A";
+    arrivalTerminal = arr.terminal || "N/A";
+    departureGate = dep.gate || "N/A";
+    arrivalGate = arr.gate || "N/A";
+    airlineText = mainRecord.airline?.name || "N/A";
+    flightStatus = mainRecord.status || "Unknown";
 
     if (depTime && arrTime) {
       const depDateObj = new Date(depTime);
@@ -116,102 +155,251 @@ const FlightResultsPage = () => {
       }
     }
 
-    aircraftText = fields.Aircraft || "N/A";
+    aircraftText =
+      aircraft.model || aircraft.regNumber || aircraft.iataCode || "N/A";
   }
 
-  console.log("BY ROUTE PARAMS:", { mode, from, to, date });
-  console.log("BY ROUTE RECORDS:", byRouteRecords);
+  async function handleSaveClick() {
+    if (!mainRecord || mode !== "byFlight") return;
+
+    setSaving(true);
+    setSaveError("");
+    setSaveSuccess("");
+
+    try {
+      await saveFlightToAirtable(mainRecord, normalisedDate);
+      setSaveSuccess("Flight saved to My Flights.");
+    } catch (err) {
+      console.error(err);
+      setSaveError(err?.message || "Problem saving this flight.");
+    } finally {
+      setSaving(false);
+    }
+  }
 
   return (
-    <div>
-      <h1>Search results</h1>
-      {mode === "byRoute" && origin && dest && date && (
-        <p>
-          {origin.toUpperCase()} → {dest.toUpperCase()} on {date}
-        </p>
-      )}
+    <div className="page-shell">
+      <div className="page-title-block">
+        <h1>Flight Schedule</h1>
 
-      {mode === "byFlight" && flight && date && (
-        <p>
-          Flight {flight.toUpperCase()} on {date}
-        </p>
-      )}
+        {mode === "byRoute" && origin && dest && date && (
+          <p className="page-title-block__subtitle">
+            {origin.toUpperCase()} to {dest.toUpperCase()} on {date}
+          </p>
+        )}
 
-      {mode === "byFlight" && byFlightLoading && <p>Loading flight data...</p>}
+        {mode === "byFlight" && flight && date && (
+          <p className="page-title-block__subtitle">
+            Flight {flight.toUpperCase()} on {date}
+          </p>
+        )}
+      </div>
+
+      {mode === "byFlight" && byFlightLoading && (
+        <p className="info-text">Loading flight data...</p>
+      )}
       {mode === "byFlight" && byFlightError && (
-        <p style={{ color: "red" }}>{byFlightError}</p>
+        <p className="error-message">{byFlightError}</p>
       )}
 
       {mode === "byFlight" && mainRecord && (
-        <>
-          <h2>Departure</h2>
-          <p>Airport: {departureAirportName}</p>
-          <p>Scheduled Time: {formatTime(departureTime)}</p>
-          <p>Terminal: {departureTerminal}</p>
-          <p>Duration: {durationText || "N/A"}</p>
+        <article className="flight-card flight-card--featured">
+          <div className="flight-card__top">
+            <div>
+              <p className="flight-card__eyebrow">Flight</p>
+              <h2 className="flight-card__title">
+                {normalisedFlight || "N/A"}
+              </h2>
+            </div>
+            <span className={getStatusClassName(flightStatus)}>
+              {formatStatusLabel(flightStatus)}
+            </span>
+          </div>
 
-          <h2>Arrival</h2>
-          <p>Airport: {arrivalAirportName}</p>
-          <p>Scheduled Time: {formatTime(arrivalTime)}</p>
-          <p>Terminal: {arrivalTerminal}</p>
+          <div className="route-strip" aria-label="Route visualization">
+            <p className="route-strip__code">{departureAirportName}</p>
+            <div className="route-strip__line">
+              <span className="route-strip__plane" aria-hidden="true">
+                ✈
+              </span>
+            </div>
+            <p className="route-strip__code route-strip__code--right">
+              {arrivalAirportName}
+            </p>
+          </div>
 
-          <h2>Flight Details</h2>
-          <p>Aircraft: {aircraftText}</p>
+          <div className="flight-card__meta-grid">
+            <div>
+              <p className="meta-label">Airline</p>
+              <p className="meta-value">{airlineText}</p>
+            </div>
+            <div>
+              <p className="meta-label">Departure Time</p>
+              <p className="meta-value">{formatTime(departureTime)}</p>
+            </div>
+            <div>
+              <p className="meta-label">Arrival Time</p>
+              <p className="meta-value">{formatTime(arrivalTime)}</p>
+            </div>
+            <div>
+              <p className="meta-label">Departure Terminal</p>
+              <p className="meta-value">{departureTerminal}</p>
+            </div>
+            <div>
+              <p className="meta-label">Arrival Terminal</p>
+              <p className="meta-value">{arrivalTerminal}</p>
+            </div>
+            <div>
+              <p className="meta-label">Departure Gate</p>
+              <p className="meta-value">{departureGate}</p>
+            </div>
+            <div>
+              <p className="meta-label">Arrival Gate</p>
+              <p className="meta-value">{arrivalGate}</p>
+            </div>
+            <div>
+              <p className="meta-label">Aircraft</p>
+              <p className="meta-value">{aircraftText}</p>
+            </div>
+            <div>
+              <p className="meta-label">Duration</p>
+              <p className="meta-value">{durationText || "N/A"}</p>
+            </div>
+          </div>
 
           <div className="flight-actions">
             <button type="button" onClick={() => navigate("/")}>
               Track Another Flight
             </button>
-            <button
-              type="button"
-              onClick={() => {
-                // later: call your "save flight" logic here
-                // e.g. save to Airtable or to local state
-                alert("Save My Flight clicked (wire this up next)");
-              }}
-            >
-              Save My Flight
+            <button type="button" onClick={handleSaveClick} disabled={saving}>
+              {saving ? "Saving..." : "Save My Flight"}
             </button>
           </div>
-        </>
+
+          {saveError && <p className="error-message">{saveError}</p>}
+          {saveSuccess && <p className="success-message">{saveSuccess}</p>}
+        </article>
       )}
 
       {mode === "byFlight" &&
         !byFlightLoading &&
         !mainRecord &&
         !byFlightError && (
-          <p>No flight found for that flight number on that day.</p>
+          <p className="info-text">
+            No flight found for that flight number on that day.
+          </p>
         )}
 
       {mode === "byRoute" && (
         <>
-          <h2>Route Matches</h2>
+          <h2 className="section-title">Route Matches</h2>
 
-          {byRouteLoading && <p>Loading route flights...</p>}
-          {byRouteError && <p style={{ color: "red" }}>{byRouteError}</p>}
+          {byRouteLoading && <p className="info-text">Loading route...</p>}
+          {byRouteError && <p className="error-message">{byRouteError}</p>}
 
           {!byRouteLoading && !byRouteError && byRouteRecords.length > 0 ? (
-            <ul>
+            <div className="flight-cards-grid">
               {byRouteRecords.map((record) => {
-                const fields = record.fields || {};
+                const dep = record.departure || {};
+                const arr = record.arrival || {};
+                const flightInfo = record.flight || {};
 
-                const routeDepTime = fields["Departure Time"] || "";
-                const routeArrTime = fields["Arrival Time"] || "";
+                const routeDepTime =
+                  dep.actualTime ||
+                  dep.estimatedTime ||
+                  dep.scheduledTime ||
+                  "";
+                const routeArrTime =
+                  arr.actualTime ||
+                  arr.estimatedTime ||
+                  arr.scheduledTime ||
+                  "";
                 const flightNumber =
-                  fields["Flight Number"] || "Unknown flight";
-                const status = fields.Status || "N/A"; // only if you add Status
+                  flightInfo.iataNumber ??
+                  (flightInfo.number != null
+                    ? String(flightInfo.number)
+                    : "Unknown flight");
+                const status = record.status || "N/A";
+                const depCode = dep.iataCode || dep.icaoCode || from || "N/A";
+                const arrCode = arr.iataCode || arr.icaoCode || to || "N/A";
+                const airline = record.airline?.name || "N/A";
+                const depTerminal = dep.terminal || "N/A";
+                const arrTerminal = arr.terminal || "N/A";
+                const depGate = dep.gate || "N/A";
+                const arrGate = arr.gate || "N/A";
 
                 return (
-                  <li key={record.id}>
-                    {flightNumber} – Status: {status} – Dep:{" "}
-                    {formatTime(routeDepTime)} – Arr: {formatTime(routeArrTime)}
-                  </li>
+                  <article
+                    className="flight-card"
+                    key={
+                      record.flight?.iataNumber ||
+                      `${dep.iataCode}-${arr.iataCode}-${routeDepTime}`
+                    }
+                  >
+                    <div className="flight-card__top">
+                      <div>
+                        <p className="flight-card__eyebrow">Flight</p>
+                        <h3 className="flight-card__title">{flightNumber}</h3>
+                      </div>
+                      <span className={getStatusClassName(status)}>
+                        {formatStatusLabel(status)}
+                      </span>
+                    </div>
+
+                    <div
+                      className="route-strip"
+                      aria-label="Route visualization"
+                    >
+                      <p className="route-strip__code">{depCode}</p>
+                      <div className="route-strip__line">
+                        <span className="route-strip__plane" aria-hidden="true">
+                          ✈
+                        </span>
+                      </div>
+                      <p className="route-strip__code route-strip__code--right">
+                        {arrCode}
+                      </p>
+                    </div>
+
+                    <div className="flight-card__meta-grid">
+                      <div>
+                        <p className="meta-label">Airline</p>
+                        <p className="meta-value">{airline}</p>
+                      </div>
+                      <div>
+                        <p className="meta-label">Departure Time</p>
+                        <p className="meta-value">{formatTime(routeDepTime)}</p>
+                      </div>
+                      <div>
+                        <p className="meta-label">Arrival Time</p>
+                        <p className="meta-value">{formatTime(routeArrTime)}</p>
+                      </div>
+                      <div>
+                        <p className="meta-label">Departure Terminal</p>
+                        <p className="meta-value">{depTerminal}</p>
+                      </div>
+                      <div>
+                        <p className="meta-label">Arrival Terminal</p>
+                        <p className="meta-value">{arrTerminal}</p>
+                      </div>
+                      <div>
+                        <p className="meta-label">Departure Gate</p>
+                        <p className="meta-value">{depGate}</p>
+                      </div>
+                      <div>
+                        <p className="meta-label">Arrival Gate</p>
+                        <p className="meta-value">{arrGate}</p>
+                      </div>
+                    </div>
+                  </article>
                 );
               })}
-            </ul>
+            </div>
           ) : (
             !byRouteLoading &&
-            !byRouteError && <p>No route flights found for that day.</p>
+            !byRouteError && (
+              <p className="info-text">No route flights found for that day.</p>
+            )
           )}
         </>
       )}

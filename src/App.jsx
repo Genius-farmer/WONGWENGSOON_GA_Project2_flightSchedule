@@ -3,10 +3,7 @@ import Navbar from "./components/Navbar";
 import LiveFlightsPage from "./components/LiveFlightsPage";
 import FlightSearchPage from "./components/FlightSearchPage";
 import FlightResultsPage from "./components/FlightResultsPage";
-
-// temporary placeholder for SearchPage and MyFlightsPage
-const SearchPage = () => <div>Search page (coming soon)</div>;
-const MyFlightsPage = () => <div>My flights (coming soon)</div>;
+import MyFlightsPage from "./components/MyFlightsPage";
 
 const App = () => {
   return (

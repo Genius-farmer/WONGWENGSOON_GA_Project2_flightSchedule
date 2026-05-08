@@ -46,8 +46,13 @@ const FlightSearchPage = () => {
   };
 
   return (
-    <div className="flight-search-page">
-      <h1>Flight Tracker</h1>
+    <div className="page-shell flight-search-page">
+      <div className="page-title-block">
+        <h1>Flight Tracker</h1>
+        <p className="page-title-block__subtitle">
+          Premium, real-time flight schedules with clear route visibility.
+        </p>
+      </div>
 
       <div className="tab-buttons">
         <button
@@ -73,7 +78,7 @@ const FlightSearchPage = () => {
               Flight Number
               <input
                 type="text"
-                placeholder="Enter flight number(e.g SQ606)"
+                placeholder="Enter flight number (e.g SQ606)"
                 value={flightNumber}
                 onChange={(e) => setFlightNumber(e.target.value)}
               />
@@ -124,14 +129,7 @@ const FlightSearchPage = () => {
         )}
 
         <button type="submit">Track Flight</button>
-        {error && (
-          <p
-            className="error-message"
-            style={{ color: "red", marginTop: "0.5rem" }}
-          >
-            {error}
-          </p>
-        )}
+        {error && <p className="error-message">{error}</p>}
       </form>
     </div>
   );

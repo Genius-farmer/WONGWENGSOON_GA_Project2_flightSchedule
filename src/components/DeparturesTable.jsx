@@ -38,9 +38,7 @@ const DeparturesTable = ({ departures, searchTerm }) => {
         <tbody>
           {filteredDepartures.length === 0 ? (
             <tr>
-              <td colSpan={/* number of columns */ 6}>
-                No departures found for “{searchTerm}”.
-              </td>
+              <td colSpan={5}>No departures found for “{searchTerm}”.</td>
             </tr>
           ) : (
             filteredDepartures.map((flight, index) => (
