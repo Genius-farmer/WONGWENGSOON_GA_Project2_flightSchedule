@@ -1,6 +1,8 @@
 import { useEffect, useState } from "react";
 import ArrivalsTable from "./ArrivalsTable";
 import DeparturesTable from "./DeparturesTable";
+import FlightSearchBar from "./FlightSearchBar";
+
 const FLIGHT_API_BASE = import.meta.env.VITE_FLIGHT_API_BASE;
 const FLIGHT_API_KEY = import.meta.env.VITE_FLIGHT_API_KEY;
 const FLIGHT_API_IATA = import.meta.env.VITE_FLIGHT_API_IATA;
@@ -10,6 +12,7 @@ const LiveFlightsPage = () => {
   const [departures, setDepartures] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+
   const [arrivalSearch, setArrivalSearch] = useState("");
   const [departureSearch, setDepartureSearch] = useState("");
 
@@ -78,32 +81,23 @@ const LiveFlightsPage = () => {
       {loading ? (
         <p className="info-text">Loading live flights...</p>
       ) : (
-        <div className="tables-container">
-          <div className="table-wrapper">
-            <h2>Changi Airport Arrivals</h2>
-            <input
-              type="text"
-              placeholder="Search by flight number"
-              value={arrivalSearch}
-              onChange={(e) => setArrivalSearch(e.target.value)}
-            />
+        // ✅ FlightSearchBar is Sibling A — updates parent state via onArrivalChange / onDepartureChange
+        // ✅ ArrivalsTable and DeparturesTable are Siblings B & C — read state passed down from parent
+        <FlightSearchBar
+          arrivalSearch={arrivalSearch}
+          departureSearch={departureSearch}
+          onArrivalChange={setArrivalSearch}
+          onDepartureChange={setDepartureSearch}
+          arrivals={
             <ArrivalsTable arrivals={arrivals} searchTerm={arrivalSearch} />
-          </div>
-
-          <div className="table-wrapper">
-            <h2>Changi Airport Departures</h2>
-            <input
-              type="text"
-              placeholder="Search by flight number"
-              value={departureSearch}
-              onChange={(e) => setDepartureSearch(e.target.value)}
-            />
+          }
+          departures={
             <DeparturesTable
               departures={departures}
               searchTerm={departureSearch}
             />
-          </div>
-        </div>
+          }
+        />
       )}
     </div>
   );
